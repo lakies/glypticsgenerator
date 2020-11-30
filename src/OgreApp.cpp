@@ -49,7 +49,7 @@ void OgreApp::setup(void)
 	mScene->setAmbientLight(ColourValue(.5, .5, .5));
 
 	Light* light = mScene->createLight("MainLight");
-	light->setPosition(600, 500, -100);
+//	light->set(600, 500, -100);
 
 	//Light* light2 = mScene->createLight("BackLight");
 	//light2->setPosition(-600, -80, 100);

@@ -2,8 +2,40 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
 project(GPG-Cpp)
 
+add_compile_options(/bigobj)
+
 # Save the command line compile commands in the build output
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+set(OGRE_DIR C:/Users/adria/Desktop/OGRE/CMake)
+set(OGRE_HOME C:/Users/adria/Desktop/OGRE)
+#set(OGRE_DIR C:/Users/adria/Desktop/OGRE/CMake)
+find_package(OGRE REQUIRED)
+include_directories(${OGRE_INCLUDE_DIRS})
+link_directories(${OGRE_INCLUDE_DIRS})
+add_definitions(${OGRE_DEFINITIONS})
+
+find_package(realsense2 REQUIRED)
+include_directories(${realsense_INCLUDE_DIR})
+
+find_package(dlib CONFIG REQUIRED)
+include_directories(${dlib_INCLUDE_DIR})
+
+# Replace this with your eos path
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/include)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/cereal/include)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/eigen/Eigen)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/eigen3-nnls/src)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/glm)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/nanoflann/include)
+include_directories(C:/Users/adria/Desktop/OGRE/eos/out/build/3rdparty/toml11)
+
+set(OpenCV_DIR C:/Users/adria/Desktop/OGRE/opencv/build)
+FIND_PACKAGE( OpenCV REQUIRED )
+INCLUDE_DIRECTORIES( ${OpenCV_INCLUDE_DIRS} )
+
+
+include_directories()
 
 # Make project require C++11
 include(CheckCXXCompilerFlag)
@@ -36,14 +68,39 @@ if(NOT REALSENSE2_FOUND)
     message(WARN "Failed to find_library(realsense2)")
 endif()
 
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.9 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS} ${ADDITIONAL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (gpg_cpp greedy_projection.cpp)
+find_package(OpenGL REQUIRED)
 
-target_link_libraries (gpg_cpp ${PCL_LIBRARIES} ${REALSENSE2_FOUND})
+# GLM
+find_package(GLM REQUIRED)
+
+# GLFW
+find_package(GLFW3 REQUIRED)
+
+set(LIBS glfw3 opengl32)
+
+file(GLOB SOURCES
+        src/*.h
+        src/*.cpp
+        )
+add_executable (gpg_cpp ${SOURCES})
+
+FIND_PACKAGE( Boost 1.40 COMPONENTS program_options thread REQUIRED )
+message("boost ${Boost_LIBRARIES}")
+
+target_link_libraries (gpg_cpp ${PCL_LIBRARIES}
+        ${REALSENSE2_FOUND}
+        ${OGRE_LIBRARIES}
+        ${realsense2_LIBRARY}
+        dlib::dlib
+        glfw
+        ${OpenCV_LIBS}
+        ${Boost_LIBRARIES}
+        )
 set_target_properties (gpg_cpp PROPERTIES FOLDER Examples)
 
 # Post Build script to copy realsense2.dll
@@ -52,7 +109,7 @@ message(STATUS "Adding Post build script to copy realsense2.dll to project's bin
 message(STATUS "Will try to copy from ${DLL_DIR} to ${PROJECT_BINARY_OUTPUT_PATH}")
 add_custom_command(TARGET gpg_cpp POST_BUILD        # Adds a post-build event to rs-getting-started
     COMMAND ${CMAKE_COMMAND} -E copy_if_different              # which executes "cmake - E copy_if_different..."
-        "${DLL_DIR}/realsense2.dll"                            # <--this is in-file
+        "${DLL_DIR}\\realsense2.dll"                            # <--this is in-file
         ${PROJECT_BINARY_OUTPUT_PATH})                 # <--this is out-file path
 endif()
 
