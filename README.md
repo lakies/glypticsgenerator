@@ -4,17 +4,21 @@ Master's Thesis for University of Tartu Software Engineering programme
 
 Software for producing a 3D rendering of the user's face in glyptics art style.
 
-## Development guide with CLion and Windows:
-Used Visual Studio 16 2019 compiler
+## Development guide with Visual Studio and Windows:
 
 * Install vcpkg for installing other dependencies
     * [https://github.com/microsoft/vcpkg#quick-start-windows](https://github.com/microsoft/vcpkg#quick-start-windows)
 * Install Ogre
-    * Download ogre from [https://dl.bintray.com/ogrecave/ogre/](https://dl.bintray.com/ogrecave/ogre/)
-        * NB! most recent version does not include HLMS. I chose version 1.12.4 which included it.
-* Install PCL 1.11.1
-    * [https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.11.1](https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.11.1)
-* Install eos
+    * Clone ogre source v1.12.4
+        * `git clone --recursive --branch v1.12.4 https://github.com/OGRECave/ogre.git`
+        * Open CMake GUI and set CMAKE_BUILD_TYPE=Debug
+        * Click Configure
+        * Set CMAKE_BUILD_TYPE=Debug again and uncheck OGRE_BUILD_PLUGIN_DOT_SCENE
+        * Click Generate
+        * Open the project and run ALL_BUILD and INSTALL targets
+* Install PCL 1.9.1
+    * [https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.9.1](https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.9.1)
+* Install eos (NOTE: built this using CLion IDE, Visual Studio steps might be a bit different)
     * Install boost from vcpkg (`.\vcpkg.exe install boost --triplet x64-windows`)
     * Download opencv 3.4.2 from [https://opencv.org/releases/](https://opencv.org/releases/)
     * Download eos source [http://patrikhuber.github.io/eos/doc/index.html](http://patrikhuber.github.io/eos/doc/index.html)
@@ -27,10 +31,13 @@ Used Visual Studio 16 2019 compiler
         * run install under Build > Install
         
 * Install realsense2, dlib, glfw3, glm
-    * `.\vcpkg.exe install realsense2 --triplet x64-windows`
     * `.\vcpkg.exe install dlib --triplet x64-windows`
     * `.\vcpkg.exe install glfw3 --triplet x64-windows`
     * `.\vcpkg.exe install glm --triplet x64-windows`
 
-I used the following cmake options
-`-DCMAKE_TOOLCHAIN_FILE=C:/Users/adria/Desktop/vcpkg/scripts/buildsystems/vcpkg.cmake -G "Visual Studio 16 2019" -A x64 -DOpenCV_DIR=C:/Users/adria/Desktop/OGRE/opencv/build`
+After installing all of the dependencies open the Visual Studio project.
+
+Under Project > Properties change the following paths to the correct install locations
+* C/C++ > General > Additional Include Directories
+* Linker > General > Additional Library Directories
+* Linker > Input > Additional Dependencies
