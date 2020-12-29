@@ -1,7 +1,0 @@
-float mainFmB_fp( float2 uv : TEXCOORD0,
-				   uniform sampler Front : register(s0),
-				   uniform sampler Back : register(s1) ) : COLOR
-{
-	float colour = tex2D( Front, uv ).x - tex2D( Back, uv ).x;
-	return colour;
-}
