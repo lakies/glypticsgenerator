@@ -1,0 +1,13 @@
+void main_vp(float4 position	: POSITION,
+			 // outputs
+			 out float4 oPosition    : POSITION,
+			 //out float  oUV			 : TEXCOORD0,
+			 out float  oZDepth		 : TEXCOORD0,
+			 uniform float4x4 worldViewProj)
+{
+	//Transform position
+	oPosition = mul(worldViewProj, position);
+	
+	//Save the Z-depth
+	oZDepth = oPosition.z;
+}

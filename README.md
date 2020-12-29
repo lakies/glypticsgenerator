@@ -9,13 +9,16 @@ Software for producing a 3D rendering of the user's face in glyptics art style.
 * Install vcpkg for installing other dependencies
     * [https://github.com/microsoft/vcpkg#quick-start-windows](https://github.com/microsoft/vcpkg#quick-start-windows)
 * Install Ogre
+    * Install CG toolkit [https://developer.nvidia.com/cg-toolkit-download](https://developer.nvidia.com/cg-toolkit-download)
     * Clone ogre source v1.12.4
         * `git clone --recursive --branch v1.12.4 https://github.com/OGRECave/ogre.git`
         * Open CMake GUI and set CMAKE_BUILD_TYPE=Debug
         * Click Configure
         * Set CMAKE_BUILD_TYPE=Debug again and uncheck OGRE_BUILD_PLUGIN_DOT_SCENE
         * Click Generate
-        * Open the project and run ALL_BUILD and INSTALL targets
+        * Open the project 
+        * Select Plugin_CgProgramManager target and under Project > Properties > Linker > Input > Additional Dependencies change the /lib/ to /lib.x64/
+        * Run ALL_BUILD and INSTALL targets
 * Install PCL 1.9.1
     * [https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.9.1](https://github.com/PointCloudLibrary/pcl/releases/tag/pcl-1.9.1)
 * Install eos (NOTE: built this using CLion IDE, Visual Studio steps might be a bit different)

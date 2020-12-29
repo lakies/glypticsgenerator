@@ -57,6 +57,7 @@ private:
 	void changeNextMaterial();
 	bool frameRenderingQueued(const Ogre::FrameEvent& evt);
 	void runFrame();
+	void loadResources();
 
 	Ogre::Root *mRoot;
 	Ogre::HlmsManager *hlmsManager;

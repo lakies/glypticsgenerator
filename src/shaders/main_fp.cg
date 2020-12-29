@@ -1,0 +1,6 @@
+float main_fp( float oZDepth : TEXCOORD0 ) : COLOR
+{
+	float colour;
+	colour = oZDepth;
+	return colour;
+}

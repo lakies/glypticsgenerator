@@ -14,6 +14,7 @@ using eos::cpp17::nullopt;
 
 void OgreApp::setup(void)
 {
+
 	ApplicationContext::setup();
 
 	// register for input events
@@ -46,14 +47,18 @@ void OgreApp::setup(void)
 	getRenderWindow()->addViewport(mainCamera);
 
 	// Set the lights
-	mScene->setAmbientLight(ColourValue(.5, .5, .5));
+	mScene->setAmbientLight(ColourValue(0.3, 0.3, 0.3));
 
 	Light* light = mScene->createLight("MainLight");
-//	light->set(600, 500, -100);
+	light->setPosition(600, 500, -100);
 
-	//Light* light2 = mScene->createLight("BackLight");
-	//light2->setPosition(-600, -80, 100);
 
+	Light* light2 = mScene->createLight("BackLight");
+	light2->setPosition(-600, -80, 100);
+
+	SceneNode* lightNode = mScene->getRootSceneNode()->createChildSceneNode();
+	lightNode->attachObject(light);
+	lightNode->attachObject(light2);
 	// parse available materials from the config
 	// config format:
 	// MaterialSetName:HeadMaterial,BackgroundMaterial,EdgeMaterial
@@ -64,6 +69,8 @@ void OgreApp::setup(void)
 	// For HLMS shading
 	hlmsManager = new HlmsManager(mScene, "General");
 
+	//CompositorManager::getSingleton().addCompositor(getRenderWindow()->getViewport(0), "SSS_Fake");
+	//CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "SSS_Fake", true);
 	// Setup threading
 	meshNeedsUpdating = false;
 	assert(!mThread);
@@ -71,6 +78,7 @@ void OgreApp::setup(void)
 }
 
 void OgreApp::setupUI() {
+	loadResources();
 	trayMgr = new TrayManager("UI", getRenderWindow(), this);
 	mScene->addRenderQueueListener(getOverlaySystem());
 	trayMgr->hideCursor();
@@ -79,6 +87,10 @@ void OgreApp::setupUI() {
 
 	Label* pauseBtn = trayMgr->createLabel(TL_TOPLEFT, "Pause", "Pause", 100.0f);
 	Label* materialBtn = trayMgr->createLabel(TL_BOTTOMRIGHT, "Material", curMat.second, 100.0f);
+}
+
+void OgreApp::loadResources() {
+	Ogre::ResourceGroupManager::getSingletonPtr()->initialiseAllResourceGroups();
 }
 
 void OgreApp::parseMaterialsConfig() {
@@ -178,25 +190,25 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	headNode->attachObject(headEntity);
 	headNode->scale(0.1, 1, 1);
 
-	// And the gem's base
-	Entity* baseCenterEntity = mScene->createEntity("baseCenter", "baseCenter.mesh");
-	SceneNode* baseCenterNode = mScene->getRootSceneNode()->createChildSceneNode();
-	baseCenterEntity->setMaterialName(materials[curMat.second][1]);
-	//createHLMSMaterial(baseCenterEntity->getSubEntity(0), 2, amethystColor, 0.9f);
-	baseCenterNode->attachObject(baseCenterEntity);
-	//baseCenterNode->scale(230, 230, 230);
-	baseCenterNode->translate(-5.0f, 40.0f, -130.0f);
+	//// And the gem's base
+	//Entity* baseCenterEntity = mScene->createEntity("baseCenter", "baseCenter.mesh");
+	//SceneNode* baseCenterNode = mScene->getRootSceneNode()->createChildSceneNode();
+	//baseCenterEntity->setMaterialName(materials[curMat.second][1]);
+	////createHLMSMaterial(baseCenterEntity->getSubEntity(0), 2, amethystColor, 0.9f);
+	//baseCenterNode->attachObject(baseCenterEntity);
+	////baseCenterNode->scale(230, 230, 230);
+	//baseCenterNode->translate(-5.0f, 40.0f, -130.0f);
 
-	Entity* baseEdgeEntity = mScene->createEntity("baseEdge", "baseEdge.mesh");
-	SceneNode* baseEdgeNode = mScene->getRootSceneNode()->createChildSceneNode();
-	baseEdgeEntity->setMaterialName(materials[curMat.second][2]);
-	//(baseEdgeEntity->getSubEntity(0), 3, goldColor, 0.9f);//0.255f);
-	baseEdgeNode->attachObject(baseEdgeEntity);
-	//baseEdgeNode->scale(230, 230, 230);
-	baseEdgeNode->translate(-5.0f, 40.0f, -130.0f);
+	//Entity* baseEdgeEntity = mScene->createEntity("baseEdge", "baseEdge.mesh");
+	//SceneNode* baseEdgeNode = mScene->getRootSceneNode()->createChildSceneNode();
+	//baseEdgeEntity->setMaterialName(materials[curMat.second][2]);
+	////(baseEdgeEntity->getSubEntity(0), 3, goldColor, 0.9f);//0.255f);
+	//baseEdgeNode->attachObject(baseEdgeEntity);
+	////baseEdgeNode->scale(230, 230, 230);
+	//baseEdgeNode->translate(-5.0f, 40.0f, -130.0f);
 
 	// Set the overall gem shape as a target for the camera
-	camController->setTarget(baseEdgeNode);
+	camController->setTarget(headNode);
 }
 
 void OgreApp::updateMesh(eos::core::Mesh mesh) {
