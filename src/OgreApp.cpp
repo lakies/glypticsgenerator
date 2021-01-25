@@ -2,6 +2,8 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
+#include <math.h>
 
 #include "OgreApp.h"
 
@@ -26,12 +28,19 @@ void OgreApp::setup(void)
 
 	mScene = mRoot->createSceneManager();
 
+	RTShader::ShaderGenerator* shadergen = RTShader::ShaderGenerator::getSingletonPtr();
+	shadergen->addSceneManager(mScene);
+
+	// Set the lights
+	mScene->setAmbientLight(ColourValue(0, 0, 0));
+	mScene->setShadowTechnique(ShadowTechnique::SHADOWDETAILTYPE_STENCIL);
+
 	// Start the video stream
-	frameCap.startVideoStream();
+	//frameCap.startVideoStream();
 
 	SceneNode* camNode = mScene->getRootSceneNode()->createChildSceneNode();
-	//camNode->setPosition(650, 20, 0);
-	//camNode->lookAt(Vector3(0, 20, 0), Node::TS_PARENT);
+	camNode->setPosition(650, 20, 0);
+	camNode->lookAt(Vector3(0, 20, 0), Node::TS_PARENT);
 
 	// Set-up camera and camera controls
 	mainCamera = mScene->createCamera("MainCam");
@@ -46,19 +55,33 @@ void OgreApp::setup(void)
 
 	getRenderWindow()->addViewport(mainCamera);
 
-	// Set the lights
-	mScene->setAmbientLight(ColourValue(0.3, 0.3, 0.3));
+	Plane plane(Vector3::UNIT_Y, 0);
+	MeshManager::getSingleton().createPlane(
+		"ground", RGN_DEFAULT,
+		plane,
+		1500, 1500, 20, 20,
+		true,
+		1, 5, 5,
+		Vector3::UNIT_Z);
+	Entity* groundEntity = mScene->createEntity("ground");
+	mScene->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
+	groundEntity->setCastShadows(false);
+	groundEntity->setMaterialName("Green");
 
-	Light* light = mScene->createLight("MainLight");
-	light->setPosition(600, 500, -100);
+
+	
+
+	Light* spotLight = mScene->createLight("SpotLight");
+	spotLight->setDiffuseColour(1, 1, 1.0);
+	spotLight->setSpecularColour(1, 1, 1.0);
+	spotLight->setType(Light::LT_DIRECTIONAL);
+	SceneNode* spotLightNode = mScene->getRootSceneNode()->createChildSceneNode();
+	spotLightNode->attachObject(spotLight);
+	spotLightNode->setDirection(-1, -1, 0);
+	spotLightNode->setPosition(Vector3(200, 200, 0));
+	spotLight->setSpotlightRange(Degree(35), Degree(50));
 
 
-	Light* light2 = mScene->createLight("BackLight");
-	light2->setPosition(-600, -80, 100);
-
-	SceneNode* lightNode = mScene->getRootSceneNode()->createChildSceneNode();
-	lightNode->attachObject(light);
-	lightNode->attachObject(light2);
 	// parse available materials from the config
 	// config format:
 	// MaterialSetName:HeadMaterial,BackgroundMaterial,EdgeMaterial
@@ -67,12 +90,12 @@ void OgreApp::setup(void)
 	setupUI();
 
 	// For HLMS shading
-	hlmsManager = new HlmsManager(mScene, "General");
+	//hlmsManager = new HlmsManager(mScene, "General");
 
 	//CompositorManager::getSingleton().addCompositor(getRenderWindow()->getViewport(0), "SSS_Fake");
 	//CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "SSS_Fake", true);
 	// Setup threading
-	meshNeedsUpdating = false;
+	meshNeedsUpdating = true;
 	assert(!mThread);
 	mThread = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&OgreApp::runFrame, this)));
 }
@@ -186,6 +209,7 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	Entity* headEntity = mScene->createEntity("head", "head.mesh");
 	SceneNode* headNode = mScene->getRootSceneNode()->createChildSceneNode();
 	headEntity->setMaterialName(materials[curMat.second][0]);
+	headEntity->setCastShadows(true);
 	//createHLMSMaterial(headEntity->getSubEntity(0), 1, amethystColor, 0.9f);
 	headNode->attachObject(headEntity);
 	headNode->scale(0.1, 1, 1);
@@ -276,7 +300,7 @@ bool OgreApp::keyPressed(const KeyboardEvent& evt)
 		exit(EXIT_SUCCESS);
 	}
 	if (evt.keysym.sym == SDLK_F1) {
-		detector.toggleWindow();
+		//detector.toggleWindow();
 	}
 
 	return true;
@@ -335,23 +359,27 @@ void OgreApp::changeNextMaterial() {
 
 void OgreApp::runFrame() {
 	while (!mExiting) {
-		if (!isPaused && !meshNeedsUpdating) {
+		unsigned int now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		//light->setPosition(0, 0, cos(now * 0.001) * 300);
+
+		if (false && !isPaused && !meshNeedsUpdating) {
+
 			// Do calculations
 			auto data = frameCap.capture();
-			auto face = detector.detect(data);
-			if (face.has_value())
-			{
-				auto tempMesh = morpher.morph(face.value(), data.first);
+			//auto face = detector.detect(data);
+			//if (face.has_value())
+			//{
+			//	auto tempMesh = morpher.morph(face.value(), data.first);
 
-				// Lock mutex
-				boost::unique_lock<boost::mutex>* lock = new boost::unique_lock<boost::mutex>(mMutex);
+			//	// Lock mutex
+			//	boost::unique_lock<boost::mutex>* lock = new boost::unique_lock<boost::mutex>(mMutex);
 
-				mesh = tempMesh;
-				meshNeedsUpdating = true;
+			//	mesh = tempMesh;
+			//	meshNeedsUpdating = true;
 
-				// Unlock mutex
-				delete lock;
-			}
+			//	// Unlock mutex
+			//	delete lock;
+			//}
 		}
 	}
 }

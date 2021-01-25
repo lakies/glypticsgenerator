@@ -17,6 +17,7 @@
 #include <OgreUTFString.h>
 #include <HLMS/OgreHlmsManager.h>
 #include <HLMS/OgreHlmsPbsMaterial.h>
+#include "OgreRTShaderSystem.h"
 
 #include <eos/core/Mesh.hpp>
 #include <Eigen/Geometry>
@@ -32,15 +33,15 @@
 #include "FacialDetector.h"
 #include "FacialMorpher.h"
 
-class OgreApp : public OgreBites::ApplicationContext, public OgreBites::InputListener, public OgreBites::TrayListener
+class OgreApp : public OgreBites::ApplicationContextSDL, public OgreBites::InputListener, public OgreBites::TrayListener
 {
 public:
 	Ogre::SceneManager* mScene;
 	FrameCapturer frameCap;
-	FacialDetector detector;
-	FacialMorpher morpher;
+	//FacialDetector detector;
+	//FacialMorpher morpher;
 
-	OgreApp() : OgreBites::ApplicationContext("Glyptics Portrait Generator Ogre"), morpher(SFM), mExiting(false) {}
+	OgreApp() : OgreBites::ApplicationContextSDL("Glyptics Portrait Generator Ogre"), mExiting(false) {} // morpher(SFM), 
 
 	void setup(void);
 	void addMesh(eos::core::Mesh mesh);
@@ -67,6 +68,7 @@ private:
 
 	bool mExiting;
 	bool isPaused = false;
+	Ogre::Light* light;
 
 	boost::shared_ptr<boost::thread> mThread;
 	boost::mutex mMutex;

@@ -4,24 +4,25 @@ using namespace eos;
 
 FacialMorpher::FacialMorpher(ModelType type) {
 	this->type = type;
+
 	// Instantiating models based on type
 	switch (type) {
-	case SFM:
-		morphableModel = morphablemodel::load_model("res/sfm_shape_3448.bin");
-		landmarkMapper = core::LandmarkMapper("res/ibug_to_sfm.txt");
-		modelContour = fitting::ModelContour::load("res/sfm_model_contours.json");
-		ibugContour = fitting::ContourLandmarks::load("res/ibug_to_sfm.txt");
-		edgeTopology = morphablemodel::load_edge_topology("res/sfm_3448_edge_topology.json");
-		blendshapes = morphablemodel::load_blendshapes("res/expression_blendshapes_3448.bin");
-		break;
-	case BFM:
-		morphableModel = morphablemodel::load_model("res/bfm2017-1_bfm_nomouth.bin");
-		landmarkMapper = core::LandmarkMapper("res/ibug_to_bfm2017-1_bfm_nomouth.txt");
-		modelContour = fitting::ModelContour::load("res/bfm2017-1_bfm_nomouth_model_contours.json");
-		ibugContour = fitting::ContourLandmarks::load("res/ibug_to_bfm2017-1_bfm_nomouth.txt");
-		edgeTopology = morphablemodel::load_edge_topology("res/bfm2017-1_bfm_nomouth_edge_topology.json");
-		//no blendshapes for BFM2017
-		break;
+		case SFM:
+			morphableModel = morphablemodel::load_model("res/sfm_shape_3448.bin");
+			landmarkMapper = core::LandmarkMapper("res/ibug_to_sfm.txt");
+			modelContour = fitting::ModelContour::load("res/sfm_model_contours.json");
+			ibugContour = fitting::ContourLandmarks::load("res/ibug_to_sfm.txt");
+			edgeTopology = morphablemodel::load_edge_topology("res/sfm_3448_edge_topology.json");
+			blendshapes = morphablemodel::load_blendshapes("res/expression_blendshapes_3448.bin");
+			break;
+		case BFM:
+			morphableModel = morphablemodel::load_model("res/bfm2017-1_bfm_nomouth.bin");
+			landmarkMapper = core::LandmarkMapper("res/ibug_to_bfm2017-1_bfm_nomouth.txt");
+			modelContour = fitting::ModelContour::load("res/bfm2017-1_bfm_nomouth_model_contours.json");
+			ibugContour = fitting::ContourLandmarks::load("res/ibug_to_bfm2017-1_bfm_nomouth.txt");
+			edgeTopology = morphablemodel::load_edge_topology("res/bfm2017-1_bfm_nomouth_edge_topology.json");
+			//no blendshapes for BFM2017
+			break;
 	}
 }
 
