@@ -943,3 +943,4 @@ void register_glfw_callbacks(window& app, glfw_state& app_state)
 		}
 	};
 }
+

@@ -11,8 +11,10 @@ using namespace std;
 using namespace Ogre;
 using namespace OgreBites;
 
+#ifndef QUICK_STARTUP
 using eos::cpp17::optional;
 using eos::cpp17::nullopt;
+#endif
 
 void OgreApp::setup(void)
 {
@@ -28,15 +30,13 @@ void OgreApp::setup(void)
 
 	mScene = mRoot->createSceneManager();
 
-	RTShader::ShaderGenerator* shadergen = RTShader::ShaderGenerator::getSingletonPtr();
-	shadergen->addSceneManager(mScene);
-
 	// Set the lights
-	mScene->setAmbientLight(ColourValue(0, 0, 0));
-	mScene->setShadowTechnique(ShadowTechnique::SHADOWDETAILTYPE_STENCIL);
+	mScene->setAmbientLight(ColourValue(0.2, 0.2, 0.2));
 
 	// Start the video stream
-	//frameCap.startVideoStream();
+#ifndef QUICK_STARTUP
+	frameCap.startVideoStream();
+#endif
 
 	SceneNode* camNode = mScene->getRootSceneNode()->createChildSceneNode();
 	camNode->setPosition(650, 20, 0);
@@ -46,31 +46,12 @@ void OgreApp::setup(void)
 	mainCamera = mScene->createCamera("MainCam");
 	mainCamera->setAutoAspectRatio(true);
 	mainCamera->setNearClipDistance(0.1);
+	mainCamera->setFarClipDistance(1000);
+	float neardist = mainCamera->getNearClipDistance();
+	float fardist = mainCamera->getFarClipDistance();
 	camNode->attachObject(mainCamera);
 
-	camController = new CameraMan(camNode);
-	camController->setStyle(CameraStyle::CS_ORBIT);
-	camController->setYawPitchDist(Radian(Degree(90)), Radian(0.3), 650);
-	addInputListener(camController);
-
 	getRenderWindow()->addViewport(mainCamera);
-
-	Plane plane(Vector3::UNIT_Y, 0);
-	MeshManager::getSingleton().createPlane(
-		"ground", RGN_DEFAULT,
-		plane,
-		1500, 1500, 20, 20,
-		true,
-		1, 5, 5,
-		Vector3::UNIT_Z);
-	Entity* groundEntity = mScene->createEntity("ground");
-	mScene->getRootSceneNode()->createChildSceneNode()->attachObject(groundEntity);
-	groundEntity->setCastShadows(false);
-	groundEntity->setMaterialName("Green");
-
-
-	
-
 	Light* spotLight = mScene->createLight("SpotLight");
 	spotLight->setDiffuseColour(1, 1, 1.0);
 	spotLight->setSpecularColour(1, 1, 1.0);
@@ -92,12 +73,34 @@ void OgreApp::setup(void)
 	// For HLMS shading
 	//hlmsManager = new HlmsManager(mScene, "General");
 
-	//CompositorManager::getSingleton().addCompositor(getRenderWindow()->getViewport(0), "SSS_Fake");
-	//CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "SSS_Fake", true);
+	loadSS();
+
+
+	camController = new CameraMan(camNode);
+	camController->setStyle(CameraStyle::CS_ORBIT);
+	camController->setYawPitchDist(Radian(Degree(90)), Radian(0.3), 650);
+	addInputListener(camController);
+
 	// Setup threading
 	meshNeedsUpdating = true;
 	assert(!mThread);
 	mThread = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&OgreApp::runFrame, this)));
+}
+
+void OgreApp::loadSS() {
+	CompositorManager::getSingleton().addCompositor(getRenderWindow()->getViewport(0), "sss");
+	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", false);
+
+
+	int kernel_size = 35;
+	KernelLoader loader;
+	std::vector<float> kernel = loader.load(kernel_size);
+	//float* kernelArray = &kernel[0];
+
+
+	//mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Vertical_pass");
+	//params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+	//params->setNamedConstant("flatKernel", kernelArray, kernel_size * 4);
 }
 
 void OgreApp::setupUI() {
@@ -110,6 +113,8 @@ void OgreApp::setupUI() {
 
 	Label* pauseBtn = trayMgr->createLabel(TL_TOPLEFT, "Pause", "Pause", 100.0f);
 	Label* materialBtn = trayMgr->createLabel(TL_BOTTOMRIGHT, "Material", curMat.second, 100.0f);
+	Label* ssBtn = trayMgr->createLabel(TL_BOTTOMLEFT, "SS", "SS On", 100.0f);
+	sswidth = trayMgr->createLongSlider(TL_TOPRIGHT, "sswidth", "SS Width", 100, 100, 100, 4000, 100);
 }
 
 void OgreApp::loadResources() {
@@ -178,6 +183,7 @@ Eigen::Vector3f* OgreApp::calculateNormals(eos::core::Mesh mesh) {
 }
 
 void OgreApp::addMesh(eos::core::Mesh mesh) {
+#ifndef QUICK_STARTUP
 	int vertexCount = mesh.vertices.size();
 	auto normals = calculateNormals(mesh);
 
@@ -198,41 +204,43 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	}
 
 	man->end();
+#endif
 
 	SceneNode* profileNode = mScene->getRootSceneNode()->createChildSceneNode();
-	//createHLMSMaterial(profileEntity->getSubEntity(0), 0);
-	//profileNode->attachObject(profileEntity);
-	profileNode->attachObject(man);
+	//profileNode->attachObject(man);
 	profileNode->scale(0.1, 1, 1);
 
 	// Adding the rest of the head
-	Entity* headEntity = mScene->createEntity("head", "head.mesh");
+	Entity* headEntity = mScene->createEntity("head", "Default_OBJ.mesh");
 	SceneNode* headNode = mScene->getRootSceneNode()->createChildSceneNode();
 	headEntity->setMaterialName(materials[curMat.second][0]);
-	headEntity->setCastShadows(true);
+
+	headEntity->setCastShadows(false);
 	//createHLMSMaterial(headEntity->getSubEntity(0), 1, amethystColor, 0.9f);
 	headNode->attachObject(headEntity);
 	headNode->scale(0.1, 1, 1);
 
 	//// And the gem's base
-	//Entity* baseCenterEntity = mScene->createEntity("baseCenter", "baseCenter.mesh");
-	//SceneNode* baseCenterNode = mScene->getRootSceneNode()->createChildSceneNode();
-	//baseCenterEntity->setMaterialName(materials[curMat.second][1]);
-	////createHLMSMaterial(baseCenterEntity->getSubEntity(0), 2, amethystColor, 0.9f);
-	//baseCenterNode->attachObject(baseCenterEntity);
-	////baseCenterNode->scale(230, 230, 230);
-	//baseCenterNode->translate(-5.0f, 40.0f, -130.0f);
+	Entity* baseCenterEntity = mScene->createEntity("baseCenter", "baseCenter.mesh");
+	SceneNode* baseCenterNode = mScene->getRootSceneNode()->createChildSceneNode();
+	baseCenterEntity->setMaterialName(materials[curMat.second][1]);
+	//createHLMSMaterial(baseCenterEntity->getSubEntity(0), 2, amethystColor, 0.9f);
+	baseCenterNode->attachObject(baseCenterEntity);
+	//baseCenterNode->scale(230, 230, 230);
+	baseCenterNode->translate(-5.0f, 40.0f, -130.0f);
 
-	//Entity* baseEdgeEntity = mScene->createEntity("baseEdge", "baseEdge.mesh");
-	//SceneNode* baseEdgeNode = mScene->getRootSceneNode()->createChildSceneNode();
-	//baseEdgeEntity->setMaterialName(materials[curMat.second][2]);
-	////(baseEdgeEntity->getSubEntity(0), 3, goldColor, 0.9f);//0.255f);
-	//baseEdgeNode->attachObject(baseEdgeEntity);
-	////baseEdgeNode->scale(230, 230, 230);
-	//baseEdgeNode->translate(-5.0f, 40.0f, -130.0f);
+	Entity* baseEdgeEntity = mScene->createEntity("baseEdge", "baseEdge.mesh");
+	SceneNode* baseEdgeNode = mScene->getRootSceneNode()->createChildSceneNode();
+	baseEdgeEntity->setMaterialName(materials[curMat.second][2]);
+	//(baseEdgeEntity->getSubEntity(0), 3, goldColor, 0.9f);//0.255f);
+	baseEdgeNode->attachObject(baseEdgeEntity);
+	//baseEdgeNode->scale(230, 230, 230);
+	baseEdgeNode->translate(-5.0f, 40.0f, -130.0f);
 
 	// Set the overall gem shape as a target for the camera
 	camController->setTarget(headNode);
+
+	getRenderWindow()->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0, 0));
 }
 
 void OgreApp::updateMesh(eos::core::Mesh mesh) {
@@ -294,6 +302,8 @@ void OgreApp::createHLMSMaterial(SubEntity* subEntity, unsigned int id, ColourVa
 
 bool OgreApp::keyPressed(const KeyboardEvent& evt)
 {
+
+
 	if (evt.keysym.sym == SDLK_ESCAPE)
 	{
 		mExiting = true;
@@ -306,17 +316,45 @@ bool OgreApp::keyPressed(const KeyboardEvent& evt)
 	return true;
 }
 
-void OgreApp::labelHit(Label *label) {
+void OgreApp::sliderMoved(Slider* slider) {
+	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", false);
+	std::cout << slider->getValue() << std::endl;
+	MaterialPtr mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Horizontal_pass");
+	GpuProgramParametersSharedPtr params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+	params->setNamedConstant("sssWidth", slider->getValue());
+	mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Vertical_pass");
+	params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
+	params->setNamedConstant("sssWidth", slider->getValue());
+
+	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", true);
+}
+
+void OgreApp::labelHit(Label* label) {
 	if (label->getName().compare("Pause") == 0) {
 		if (isPaused)
 			label->setCaption("Pause");
 		else
 			label->setCaption("Unpause");
 		isPaused = !isPaused;
+
+		if (isPaused)
+		{
+			camController->setStyle(CS_MANUAL);
+		}
+		else
+		{
+			camController->setStyle(CS_ORBIT);
+		}
 	}
 	if (label->getName().compare("Material") == 0) {
 		changeNextMaterial();
 		label->setCaption(curMat.second);
+	}
+
+	if (label->getName().compare("SS") == 0) {
+		isSS = !isSS;
+		CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", isSS);
+		label->setCaption(isSS ? "SS Off" : "SS on");
 	}
 }
 
@@ -358,29 +396,28 @@ void OgreApp::changeNextMaterial() {
 }
 
 void OgreApp::runFrame() {
+	
 	while (!mExiting) {
-		unsigned int now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-		//light->setPosition(0, 0, cos(now * 0.001) * 300);
-
-		if (false && !isPaused && !meshNeedsUpdating) {
+#ifndef QUICK_STARTUP
+		if (!isPaused && !meshNeedsUpdating) {
 
 			// Do calculations
 			auto data = frameCap.capture();
-			//auto face = detector.detect(data);
-			//if (face.has_value())
-			//{
-			//	auto tempMesh = morpher.morph(face.value(), data.first);
+			auto face = detector.detect(data);
+			if (face.has_value()) {
+				auto tempMesh = morpher.morph(face.value(), data.first);
 
 			//	// Lock mutex
-			//	boost::unique_lock<boost::mutex>* lock = new boost::unique_lock<boost::mutex>(mMutex);
+				boost::unique_lock<boost::mutex>* lock = new boost::unique_lock<boost::mutex>(mMutex);
 
-			//	mesh = tempMesh;
-			//	meshNeedsUpdating = true;
+				mesh = tempMesh;
+				meshNeedsUpdating = true;
 
 			//	// Unlock mutex
-			//	delete lock;
-			//}
+				delete lock;
+			}
 		}
+#endif
 	}
 }
 
@@ -399,6 +436,9 @@ bool OgreApp::frameRenderingQueued(const FrameEvent& evt) {
 
 	// Unlock mutex
 	delete lock;
+
+	//RenderTarget::FrameStats stats = getRenderWindow()->getStatistics();
+	//std::cout << stats.avgFPS << " FPS" << std::endl;
 
 	return true;
 }

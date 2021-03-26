@@ -22,6 +22,7 @@
     <ClCompile Include="src\FacialDetector.cpp" />
     <ClCompile Include="src\FacialMorpher.cpp" />
     <ClCompile Include="src\FrameCapturer.cpp" />
+    <ClCompile Include="src\KernelLoader.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\OgreApp.cpp" />
   </ItemGroup>
@@ -29,6 +30,7 @@
     <ClInclude Include="src\FacialDetector.h" />
     <ClInclude Include="src\FacialMorpher.h" />
     <ClInclude Include="src\FrameCapturer.h" />
+    <ClInclude Include="src\KernelLoader.h" />
     <ClInclude Include="src\helpers.h" />
     <ClInclude Include="src\OgreApp.h" />
   </ItemGroup>
@@ -52,7 +54,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

@@ -28,20 +28,31 @@
 #include <boost/algorithm/string.hpp> 
 
 #include <string>
+#include "KernelLoader.h"
+// If this is defined then all the face morphing stuff is excluded and application startup time is greatly increased
+#define QUICK_STARTUP
 
+#ifndef QUICK_STARTUP
 #include "FrameCapturer.h"
 #include "FacialDetector.h"
 #include "FacialMorpher.h"
+#endif
 
 class OgreApp : public OgreBites::ApplicationContextSDL, public OgreBites::InputListener, public OgreBites::TrayListener
 {
 public:
 	Ogre::SceneManager* mScene;
+#ifndef QUICK_STARTUP
 	FrameCapturer frameCap;
-	//FacialDetector detector;
-	//FacialMorpher morpher;
+	FacialDetector detector;
+	FacialMorpher morpher;
+#endif
 
-	OgreApp() : OgreBites::ApplicationContextSDL("Glyptics Portrait Generator Ogre"), mExiting(false) {} // morpher(SFM), 
+#ifdef QUICK_STARTUP
+	OgreApp() : OgreBites::ApplicationContextSDL("Glyptics Portrait Generator Ogre"), mExiting(false) {} //  , morpher(SFM)
+#else
+	OgreApp() : OgreBites::ApplicationContextSDL("Glyptics Portrait Generator Ogre"), morpher(SFM), mExiting(false) {} //  
+#endif
 
 	void setup(void);
 	void addMesh(eos::core::Mesh mesh);
@@ -54,11 +65,13 @@ private:
 	Eigen::Vector3f* calculateNormals(eos::core::Mesh mesh);
 	void createHLMSMaterial(Ogre::SubEntity* subEntity, unsigned int id, Ogre::ColourValue color = Ogre::ColourValue::Green, float roughness = 0.5f);
 	bool keyPressed(const OgreBites::KeyboardEvent& evt);
-	void labelHit(OgreBites::Label *label);
+	void labelHit(OgreBites::Label* label);
+	void sliderMoved(OgreBites::Slider* slider);
 	void changeNextMaterial();
 	bool frameRenderingQueued(const Ogre::FrameEvent& evt);
 	void runFrame();
 	void loadResources();
+	void loadSS();
 
 	Ogre::Root *mRoot;
 	Ogre::HlmsManager *hlmsManager;
@@ -74,6 +87,8 @@ private:
 	boost::mutex mMutex;
 	eos::core::Mesh mesh;
 	bool meshNeedsUpdating;
+	bool isSS = false;
+	OgreBites::Slider* sswidth;
 
 	std::map<std::string, std::vector<std::string>> materials;
 	std::pair<int, std::string> curMat; //current material

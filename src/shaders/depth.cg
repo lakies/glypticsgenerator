@@ -1,0 +1,152 @@
+float map(float value, float min1, float max1, float min2, float max2) {
+  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+}
+
+void depth_vp(float4 position	: POSITION,
+            out float4 oPosition    : POSITION,
+            out float  depth		 : TEXCOORD0,
+            uniform float nearClip,
+            uniform float farClip,
+			uniform float4x4 proj,
+			uniform float4x4 worldView)
+{
+    float4 pos = mul(worldView, position);
+	oPosition = mul(proj, pos);
+	depth = map(-pos.z, nearClip, farClip, 0, 1);
+}
+
+
+float depth_fp( float depth : TEXCOORD0 ) : COLOR
+{
+	return depth;
+}
+
+void strength_vp(float4 position	: POSITION,
+            out float4 oPosition    : POSITION,
+			uniform float4x4 proj,
+			uniform float4x4 worldView)
+{
+    float4 pos = mul(worldView, position);
+	oPosition = mul(proj, pos);
+}
+
+float strength_fp(uniform float strength) : COLOR
+{
+	return -1 + strength;
+}
+
+
+float4 depth_fp_test( float2 uv : TEXCOORD0,
+					    uniform sampler Scene : register(s0),
+					    uniform sampler Depth : register(s1)
+                        ) : COLOR
+{
+	float depth = tex2D( Depth, uv ).r;
+    float4 color = tex2D( Scene, uv );
+
+    return float4(depth, depth, depth, 1) + color * 0.000001;// + float4(1, 0, 0, 1);
+}
+
+static const int SSS_SAMPLE_SIZE = 35;
+
+static const float4 kernel[] = {
+        float4(0.0165133,0.0181807,0.0198879,0),
+        float4(0.00673621,0.0055374,0.00446758,-3.64969),
+        float4(0.0143791,0.0119639,0.00978419,-3.23295),
+        float4(0.015999,0.0135186,0.0113125,-2.84146),
+        float4(0.0182199,0.0157776,0.0135635,-2.47522),
+        float4(0.0209935,0.0186155,0.0164428,-2.13425),
+        float4(0.024109,0.0219524,0.0198421,-1.81853),
+        float4(0.0274575,0.0256677,0.0237996,-1.52807),
+        float4(0.0308472,0.0295403,0.0281015,-1.26287),
+        float4(0.0339812,0.0333672,0.0325098,-1.02292),
+        float4(0.0367375,0.0369391,0.0367958,-0.808236),
+        float4(0.0387906,0.0398057,0.0405052,-0.618806),
+        float4(0.0399783,0.0416914,0.0432092,-0.454633),
+        float4(0.0401751,0.0424392,0.0446208,-0.315717),
+        float4(0.0395159,0.0420193,0.0445639,-0.202059),
+        float4(0.0380664,0.0406503,0.0433307,-0.113658),
+        float4(0.035375,0.0380676,0.0408105,-0.0505148),
+        float4(0.0303818,0.0333564,0.0363964,-0.0126287),
+        float4(0.0303818,0.0333564,0.0363963,0.0126287),
+        float4(0.035375,0.0380675,0.0408105,0.0505147),
+        float4(0.0380665,0.0406503,0.0433307,0.113658),
+        float4(0.039516,0.0420193,0.0445639,0.202059),
+        float4(0.0401751,0.0424392,0.0446208,0.315717),
+        float4(0.0399783,0.0416914,0.0432092,0.454633),
+        float4(0.0387906,0.0398057,0.0405052,0.618806),
+        float4(0.0367375,0.0369392,0.0367958,0.808236),
+        float4(0.0339811,0.0333671,0.0325098,1.02292),
+        float4(0.0308472,0.0295403,0.0281015,1.26287),
+        float4(0.0274575,0.0256677,0.0237996,1.52807),
+        float4(0.024109,0.0219524,0.0198421,1.81853),
+        float4(0.0209935,0.0186155,0.0164428,2.13425),
+        float4(0.0182199,0.0157776,0.0135635,2.47522),
+        float4(0.015999,0.0135186,0.0113125,2.84146),
+        float4(0.0143791,0.0119639,0.00978419,3.23295),
+        float4(0.00673621,0.0055374,0.00446758,3.64969),
+};
+
+float4 sss_fp ( float2 uv : TEXCOORD0,
+					    uniform sampler Scene : register(s0),
+					    uniform sampler Depth : register(s1),
+					    uniform sampler Strength : register(s2),
+					    uniform float2 dir,
+                        uniform float sssWidth,
+                        uniform float fieldOfView // in radians
+                        ) : COLOR
+{
+
+    float depth = tex2D( Depth, uv ).r;
+    float4 color = tex2D( Scene, uv );
+    float strength = tex2D( Strength, uv ).r;
+
+    float distanceToProjectionWindow = 1.0 / tan(0.5 * fieldOfView);
+    float scale = distanceToProjectionWindow / depth;
+
+    if (strength > 0) {
+        return color;
+    }
+
+    strength = strength + 1;
+
+    float2 finalStep = scale * dir;
+    finalStep *= strength;
+    finalStep *= 1.0 / (2.0 * sssWidth);
+
+    float4 colorBlurred = color;
+    colorBlurred.rgb *= kernel[0].rgb;
+
+    // Accumulate the other samples:
+    for (int i = 0; i < SSS_SAMPLE_SIZE; i++) {
+        // Fetch color and depth for current sample:
+        // float2 offset = uv + float2(1, 1) * dir * (i - SSS_SAMPLE_SIZE / 2) * 0.006;
+        float2 offset = uv + kernel[i].a * finalStep;
+        float4 offsetColor = tex2D( Scene , offset);
+        if (offset.r > 1 || offset.g > 1 || offset.r < 0 || offset.g < 0) {
+            offsetColor = color;//float4(1, 0, 0, 1);
+        }
+
+        // #if SSSS_FOLLOW_SURFACE == 1
+		// 	// If the difference in depth is huge, we lerp color back to "colorM":
+		// 	float depth = SSSSSample(depthTex, offset).r;
+        
+		// 	float s = SSSSSaturate( abs(depthM - depth) / (distanceToProjectionWindow * (maxOffsetMm / sssWidth)));
+		// 	s = min(1,s*1.5); // custom / user definable scaling
+
+		// 	color.rgb = SSSSLerp(color.rgb, colorM.rgb, s);
+        // #endif
+
+        // Accumulate:
+        // colorBlurred += offsetColor / SSS_SAMPLE_SIZE + finalStep.x * 0.0000000001 * kernel[i] * color;
+        // colorBlurred.rgb += (float3(1, 1, 1) / SSS_SAMPLE_SIZE) * offsetColor.rgb;
+
+        colorBlurred.rgb += kernel[i].rgb * offsetColor.rgb;
+    }
+
+    // if (dir.x == 0 && dir.y == 1) {
+    //     return float4(1, 0, 0, 1);
+    // }
+
+	return colorBlurred;
+}

@@ -11,6 +11,7 @@
     <ClCompile Include="src\FacialDetector.cpp" />
     <ClCompile Include="src\FacialMorpher.cpp" />
     <ClCompile Include="src\FrameCapturer.cpp" />
+    <ClCompile Include="src\KernelLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\helpers.h" />
@@ -18,6 +19,7 @@
     <ClInclude Include="src\FacialDetector.h" />
     <ClInclude Include="src\FacialMorpher.h" />
     <ClInclude Include="src\FrameCapturer.h" />
+    <ClInclude Include="src\KernelLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="resources.cfg" />
