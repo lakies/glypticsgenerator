@@ -82,7 +82,14 @@ void OgreApp::setup(void)
 	addInputListener(camController);
 
 	// Setup threading
+
+#ifdef QUICK_STARTUP
 	meshNeedsUpdating = true;
+#else
+	meshNeedsUpdating = false;
+#endif
+
+
 	assert(!mThread);
 	mThread = boost::shared_ptr<boost::thread>(new boost::thread(boost::bind(&OgreApp::runFrame, this)));
 }
@@ -98,9 +105,9 @@ void OgreApp::loadSS() {
 	//float* kernelArray = &kernel[0];
 
 
-	//mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Vertical_pass");
-	//params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
-	//params->setNamedConstant("flatKernel", kernelArray, kernel_size * 4);
+	//MaterialPtr mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Material.001");
+	//GpuProgramParametersSharedPtr params = mat->getTechnique(0)->getPass(0)->getVertexProgramParameters();
+	////params->setNamedConstant("normalOverride", 1.0f);
 }
 
 void OgreApp::setupUI() {
@@ -167,7 +174,7 @@ Eigen::Vector3f* OgreApp::calculateNormals(eos::core::Mesh mesh) {
 		for (int vi = 0; vi < 3; vi++) {
 			if (t[vi] < 20208) { // checking for bounds
 				int times = timesUsed[t[vi]];
-				normals[t[vi]] = (normals[t[vi]] * times + n) / (times + 1); // additive average
+				normals[t[vi]] = n;// (normals[t[vi]] * times + n) / (times + 1); // additive average
 			}
 		}
 
@@ -183,6 +190,8 @@ Eigen::Vector3f* OgreApp::calculateNormals(eos::core::Mesh mesh) {
 }
 
 void OgreApp::addMesh(eos::core::Mesh mesh) {
+	SceneNode* profileNode = mScene->getRootSceneNode()->createChildSceneNode();
+
 #ifndef QUICK_STARTUP
 	int vertexCount = mesh.vertices.size();
 	auto normals = calculateNormals(mesh);
@@ -204,10 +213,10 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	}
 
 	man->end();
+	man->setMaterialName(0, materials[curMat.second][0]);
+	profileNode->attachObject(man);
 #endif
 
-	SceneNode* profileNode = mScene->getRootSceneNode()->createChildSceneNode();
-	//profileNode->attachObject(man);
 	profileNode->scale(0.1, 1, 1);
 
 	// Adding the rest of the head
@@ -226,6 +235,8 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	baseCenterEntity->setMaterialName(materials[curMat.second][1]);
 	//createHLMSMaterial(baseCenterEntity->getSubEntity(0), 2, amethystColor, 0.9f);
 	baseCenterNode->attachObject(baseCenterEntity);
+
+	SubMesh* submesh = baseCenterEntity->getMesh()->getSubMesh(0);
 	//baseCenterNode->scale(230, 230, 230);
 	baseCenterNode->translate(-5.0f, 40.0f, -130.0f);
 
@@ -437,8 +448,8 @@ bool OgreApp::frameRenderingQueued(const FrameEvent& evt) {
 	// Unlock mutex
 	delete lock;
 
-	//RenderTarget::FrameStats stats = getRenderWindow()->getStatistics();
-	//std::cout << stats.avgFPS << " FPS" << std::endl;
+	/*RenderTarget::FrameStats stats = getRenderWindow()->getStatistics();
+	std::cout << stats.avgFPS << " FPS" << std::endl;*/
 
 	return true;
 }
