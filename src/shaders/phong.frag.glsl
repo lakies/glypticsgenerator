@@ -1,5 +1,6 @@
 #version 400
 
+uniform sampler2D diffuseMap;
 uniform vec3 lightPosition;
 
 in vec3 interpolatedNormal;
@@ -8,14 +9,6 @@ in vec2 interpolatedUv;
 in vec3 interpolatedModelPosition;
 
 out vec4 fragColor;
-
-float numberOfTilesWidth = 1;
-float numberOfTilesHeight = 1;
-float amplitude = 20.0;
-vec3 jointColor = vec3(0.72, 0.72, 0.72);
-
-vec3 tileSize = vec3(1.1, 1.0, 1.1);
-vec3 tilePct = vec3(0.98, 1.0, 0.98);
 
 vec3 mod289(vec3 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;
@@ -34,7 +27,7 @@ vec4 taylorInvSqrt(vec4 r)
   return 1.79284291400159 - 0.85373472095314 * r;
 }
 
-float noise(vec3 v){ 
+float snoise(vec3 v){ 
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -75,50 +68,18 @@ float noise(vec3 v){
   p3 *= norm.w;
   vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
   m = m * m;
-  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
-}
-
-float turbulence(vec3 P)
-{
-	float val = 0.0;
-	float freq = 1.0;
-	for (int i = 0; i < 5; i++)
-	{
-		val += (noise(P*freq) / freq);
-		freq *= 2;
-	}
-	return (val + 0.5) / 2;
-}
-
-float roundF(float number){
-	return sign(number)*floor(abs(number) + 0.5);
-}
-
-vec3 marble_color(float x)
-{
-	vec3 col;
-	x = 0.5*(x + 1.);
-	x = sqrt(x);             
-	x = sqrt(x);
-	x = sqrt(x);
-	col = vec3(.2 + .75*x);
-	return col;
-}
-
-vec3 marbleColor() {
-  vec3 uv = interpolatedModelPosition / 500;
-
-  float turb_strength = 8;
-  float turb_size = 3;
-  float frequency = 30;
-
-  vec3 color = marble_color(0.95 * sin((uv.y * uv.y * 3) * uv.z * frequency + turbulence(uv * turb_size) * turb_strength));
-  return color;
+  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) )  / 1.4 + 0.6;
 }
 
 void main(void) {
     
-    vec3 interpolatedColor = marbleColor();
+    // vec3 interpolatedColor = texture(diffuseMap, interpolatedModelPosition.yz / 500 + vec2(0.5, 0.5)).rgb;
+    vec3 uv = interpolatedModelPosition / 500;
+    vec3 interpolatedColor = vec3(0.0745,0.0196,0.0196) * (snoise( 4 * uv) * 3);
+
+    if (distance(uv, vec3(0, 0.1, -0.45)) < 0.1) {
+        interpolatedColor = vec3(0.6706,0.6902,0.6706);
+    }
 
     vec3 n = normalize(interpolatedNormal);
 

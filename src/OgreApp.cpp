@@ -38,9 +38,13 @@ void OgreApp::setup(void)
 	frameCap.startVideoStream();
 #endif
 
+
+	mScene->getRootSceneNode()->translate(-5.0f, 40.0f, -130.0f);
+
 	SceneNode* camNode = mScene->getRootSceneNode()->createChildSceneNode();
-	camNode->setPosition(650, 20, 0);
-	camNode->lookAt(Vector3(0, 20, 0), Node::TS_PARENT);
+	camNode->setPosition(650, 0, 0);
+	camNode->lookAt(mScene->getRootSceneNode()->getPosition(), Node::TS_PARENT);
+	//camNode->lookAt(Vector3(0, 0, 0), Node::TS_PARENT);
 
 	// Set-up camera and camera controls
 	mainCamera = mScene->createCamera("MainCam");
@@ -78,7 +82,7 @@ void OgreApp::setup(void)
 
 	camController = new CameraMan(camNode);
 	camController->setStyle(CameraStyle::CS_ORBIT);
-	camController->setYawPitchDist(Radian(Degree(90)), Radian(0.3), 650);
+	camController->setYawPitchDist(Radian(Degree(90)), Radian(0), 650);
 	addInputListener(camController);
 
 	// Setup threading
@@ -99,7 +103,7 @@ void OgreApp::loadSS() {
 	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", false);
 
 
-	int kernel_size = 35;
+	int kernel_size = 21;
 	KernelLoader loader;
 	std::vector<float> kernel = loader.load(kernel_size);
 	//float* kernelArray = &kernel[0];
@@ -118,10 +122,14 @@ void OgreApp::setupUI() {
 
 	addInputListener(trayMgr);
 
-	Label* pauseBtn = trayMgr->createLabel(TL_TOPLEFT, "Pause", "Pause", 100.0f);
+	/*fps = trayMgr->createLabel(TL_TOPLEFT, "FPS", "FPS", 100.0f);
+	Label* pauseBtn = trayMgr->createLabel(TL_TOPLEFT, "Pause", "Pause", 100.0f);*/
 	Label* materialBtn = trayMgr->createLabel(TL_BOTTOMRIGHT, "Material", curMat.second, 100.0f);
-	Label* ssBtn = trayMgr->createLabel(TL_BOTTOMLEFT, "SS", "SS On", 100.0f);
-	sswidth = trayMgr->createLongSlider(TL_TOPRIGHT, "sswidth", "SS Width", 100, 100, 100, 4000, 100);
+	Label* ssBtn = trayMgr->createLabel(TL_BOTTOMLEFT, "SS", "SS Off", 100.0f);
+	Label* adjustBtn = trayMgr->createLabel(TL_TOPLEFT, "adjust", "Adjust SS", 150.0f);
+	Label* resetBtn = trayMgr->createLabel(TL_TOPLEFT, "reset", "Reset SS", 150.0f);
+	sswidth = trayMgr->createLongSlider(TL_TOPRIGHT, "sswidth", "SS Strength", 200, 100, 0, 100, 100);
+	sswidth->hide();
 }
 
 void OgreApp::loadResources() {
@@ -217,7 +225,8 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	profileNode->attachObject(man);
 #endif
 
-	profileNode->scale(0.1, 1, 1);
+	profileNode->scale(0.07, 1, 1);
+	profileNode->translate(1.7, 0, 0);
 
 	// Adding the rest of the head
 	Entity* headEntity = mScene->createEntity("head", "Default_OBJ.mesh");
@@ -249,7 +258,6 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	baseEdgeNode->translate(-5.0f, 40.0f, -130.0f);
 
 	// Set the overall gem shape as a target for the camera
-	camController->setTarget(headNode);
 
 	getRenderWindow()->getViewport(0)->setBackgroundColour(Ogre::ColourValue(0, 0, 0, 0));
 }
@@ -328,14 +336,24 @@ bool OgreApp::keyPressed(const KeyboardEvent& evt)
 }
 
 void OgreApp::sliderMoved(Slider* slider) {
+
+	if (!CompositorManager::getSingleton().getCompositorChain(getRenderWindow()->getViewport(0))->getCompositor("sss")->getEnabled())
+	{
+		return;
+	}
+
 	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", false);
-	std::cout << slider->getValue() << std::endl;
+	
+	int val = slider->getValue();
+	float trueVal = 1500 + (1.0 * (100 - 1500) / (100.0)) * (val);
+	std::cout << trueVal << std::endl;
+
 	MaterialPtr mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Horizontal_pass");
 	GpuProgramParametersSharedPtr params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
-	params->setNamedConstant("sssWidth", slider->getValue());
+	params->setNamedConstant("sssWidth", trueVal);
 	mat = (MaterialPtr)MaterialManager::getSingleton().getByName("Vertical_pass");
 	params = mat->getTechnique(0)->getPass(0)->getFragmentProgramParameters();
-	params->setNamedConstant("sssWidth", slider->getValue());
+	params->setNamedConstant("sssWidth", trueVal);
 
 	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", true);
 }
@@ -365,7 +383,29 @@ void OgreApp::labelHit(Label* label) {
 	if (label->getName().compare("SS") == 0) {
 		isSS = !isSS;
 		CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", isSS);
-		label->setCaption(isSS ? "SS Off" : "SS on");
+		label->setCaption(isSS ? "SS On" : "SS Off");
+	}
+
+	if (label->getName().compare("reset") == 0) {
+		sswidth->setValue(75);
+		sliderMoved(sswidth);
+	}
+
+	if (label->getName().compare("adjust") == 0) {
+		showAdjust = !showAdjust;
+
+		if (showAdjust)
+		{
+			camController->setStyle(CS_MANUAL);
+			sswidth->show();
+		}
+		else {
+			camController->setStyle(CS_ORBIT);
+			sswidth->hide();
+		}
+
+		trayMgr->adjustTrays();
+		label->setCaption(!showAdjust ? "Adjust SS" : "Finish Adjust");
 	}
 }
 
@@ -448,8 +488,10 @@ bool OgreApp::frameRenderingQueued(const FrameEvent& evt) {
 	// Unlock mutex
 	delete lock;
 
-	/*RenderTarget::FrameStats stats = getRenderWindow()->getStatistics();
-	std::cout << stats.avgFPS << " FPS" << std::endl;*/
+	RenderTarget::FrameStats stats = getRenderWindow()->getStatistics();
+	//std::cout << stats.avgFPS << " FPS" << std::endl;
+
+	//fps->setCaption(std::to_string((int) stats.avgFPS));
 
 	return true;
 }

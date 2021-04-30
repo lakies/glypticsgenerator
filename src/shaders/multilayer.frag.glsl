@@ -6,16 +6,11 @@ in vec3 interpolatedNormal;
 in vec3 interpolatedPosition;
 in vec2 interpolatedUv;
 in vec3 interpolatedModelPosition;
+in float metaball1Dist;
+in float metaball2Dist;
+in float metaball3Dist;
 
 out vec4 fragColor;
-
-float numberOfTilesWidth = 1;
-float numberOfTilesHeight = 1;
-float amplitude = 20.0;
-vec3 jointColor = vec3(0.72, 0.72, 0.72);
-
-vec3 tileSize = vec3(1.1, 1.0, 1.1);
-vec3 tilePct = vec3(0.98, 1.0, 0.98);
 
 vec3 mod289(vec3 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;
@@ -34,7 +29,7 @@ vec4 taylorInvSqrt(vec4 r)
   return 1.79284291400159 - 0.85373472095314 * r;
 }
 
-float noise(vec3 v){ 
+float snoise(vec3 v){ 
   const vec2  C = vec2(1.0/6.0, 1.0/3.0) ;
   const vec4  D = vec4(0.0, 0.5, 1.0, 2.0);
 
@@ -75,50 +70,78 @@ float noise(vec3 v){
   p3 *= norm.w;
   vec4 m = max(0.5 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
   m = m * m;
-  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+  return 105.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) )  / 1.4 + 0.6;
 }
 
-float turbulence(vec3 P)
-{
-	float val = 0.0;
-	float freq = 1.0;
-	for (int i = 0; i < 5; i++)
-	{
-		val += (noise(P*freq) / freq);
-		freq *= 2;
-	}
-	return (val + 0.5) / 2;
-}
+const int colorCount = 2;
 
-float roundF(float number){
-	return sign(number)*floor(abs(number) + 0.5);
-}
+const vec4 colors[] = vec4[colorCount](
+  vec4(0.0745,0.0196,0.0196, -0.00),
+  vec4(0.6706,0.6902,0.6706, 0.07)
+);
 
-vec3 marble_color(float x)
-{
-	vec3 col;
-	x = 0.5*(x + 1.);
-	x = sqrt(x);             
-	x = sqrt(x);
-	x = sqrt(x);
-	col = vec3(.2 + .75*x);
-	return col;
-}
+// vec3 getColor(int i) {
 
-vec3 marbleColor() {
-  vec3 uv = interpolatedModelPosition / 500;
+// }
 
-  float turb_strength = 8;
-  float turb_size = 3;
-  float frequency = 30;
+vec3 colorMap(float val) {
+  if (val < colors[0].a) {
+    return colors[0].xyz;
+  }
 
-  vec3 color = marble_color(0.95 * sin((uv.y * uv.y * 3) * uv.z * frequency + turbulence(uv * turb_size) * turb_strength));
-  return color;
+  if (val > colors[colorCount - 1].a) {
+    return colors[colorCount - 1].xyz;
+  }
+
+  for(int i = 0; i < colorCount - 1; i++)
+  {
+    if (val >= colors[i].a && val < colors[i + 1].a) {
+      float a = (val - colors[i].a) / (colors[i + 1].a - colors[i].a);
+
+      return mix(colors[i].xyz, colors[i + 1].xyz, a);
+    }
+  }
+
+  return vec3(0, 0, 1);
 }
 
 void main(void) {
     
-    vec3 interpolatedColor = marbleColor();
+    vec3 uv = interpolatedModelPosition / 500;
+    vec3 interpolatedColor = colorMap(uv.x * 10  + 0.1);
+
+    float metaballStrength = 0;
+    float minimum = 77;
+    float maximum = 90;
+    float maxVal = 1;
+    if (metaball1Dist > minimum && metaball1Dist < maximum) {
+      metaballStrength = 1 - min(maxVal,(metaball1Dist - minimum) / (maximum - minimum));
+    }
+
+    minimum = 83;
+    maximum = 97;
+    if (metaball2Dist > minimum && metaball2Dist < maximum) {
+      float str = 1 - min(maxVal,(metaball2Dist - minimum) / (maximum - minimum));
+      if (metaballStrength > 0) {
+          metaballStrength = max(str, metaballStrength);
+      } else {
+        metaballStrength = str;
+      }
+    }
+
+    minimum = 73;
+    maximum = 100;
+    if (metaball3Dist > minimum && metaball3Dist < maximum) {
+      float str = 1 - min(maxVal,(metaball3Dist - minimum) / (maximum - minimum));
+      if (metaballStrength > 0) {
+          metaballStrength = max(str, metaballStrength);
+      } else {
+        metaballStrength = str;
+      }
+    }
+
+    vec3 highlightColor = vec3(0.2863,0.1137,0.0078);//, vec3(0.1529,0.0392,0.0392))
+    interpolatedColor = mix(interpolatedColor, highlightColor, metaballStrength * (snoise(uv) / 2 + 0.5) * 1.2);
 
     vec3 n = normalize(interpolatedNormal);
 

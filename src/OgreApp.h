@@ -88,7 +88,9 @@ private:
 	eos::core::Mesh mesh;
 	bool meshNeedsUpdating;
 	bool isSS = false;
+	bool showAdjust = false;
 	OgreBites::Slider* sswidth;
+	OgreBites::Label* fps;
 
 	std::map<std::string, std::vector<std::string>> materials;
 	std::pair<int, std::string> curMat; //current material

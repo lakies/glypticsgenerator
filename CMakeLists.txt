@@ -68,10 +68,6 @@ if(NOT REALSENSE2_FOUND)
     message(WARN "Failed to find_library(realsense2)")
 endif()
 
-find_package(PCL 1.9 REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS} ${ADDITIONAL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 find_package(OpenGL REQUIRED)
 
@@ -92,7 +88,7 @@ add_executable (gpg_cpp ${SOURCES})
 FIND_PACKAGE( Boost 1.40 COMPONENTS program_options thread REQUIRED )
 message("boost ${Boost_LIBRARIES}")
 
-target_link_libraries (gpg_cpp ${PCL_LIBRARIES}
+target_link_libraries (gpg_cpp
         ${REALSENSE2_FOUND}
         ${OGRE_LIBRARIES}
         ${realsense2_LIBRARY}
