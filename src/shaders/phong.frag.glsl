@@ -84,11 +84,7 @@ void main(void) {
     vec3 lightColor = vec3(1.0,1.0,1.0);
     vec3 diffuse = lightColor * interpolatedColor * max(dot(n, normalize(lightPosition - interpolatedPosition)), 0);
 
-    vec3 reflection = normalize(reflect(normalize(interpolatedPosition - lightPosition), n));
-    vec3 reflectionColor = vec3(1.0,1.0,1.0);
-    vec3 specular = lightColor * reflectionColor * pow(max(dot(normalize(vec3(0,0,0) - interpolatedPosition), reflection), 0), 500);
-
-    vec3 color = diffuse + specular;
+    vec3 color = diffuse;
 
     fragColor = vec4(color, 1.0);
 

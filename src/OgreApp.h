@@ -30,7 +30,7 @@
 #include <string>
 #include "KernelLoader.h"
 // If this is defined then the face morphing is excluded and application startup time is greatly increased
-#define QUICK_STARTUP
+//#define QUICK_STARTUP
 
 #ifndef QUICK_STARTUP
 #include "FrameCapturer.h"
