@@ -103,9 +103,7 @@ void OgreApp::loadSS() {
 	CompositorManager::getSingleton().setCompositorEnabled(getRenderWindow()->getViewport(0), "sss", false);
 
 
-	int kernel_size = 21;
-	KernelLoader loader;
-	std::vector<float> kernel = loader.load(kernel_size);
+	
 	//float* kernelArray = &kernel[0];
 
 
@@ -229,7 +227,7 @@ void OgreApp::addMesh(eos::core::Mesh mesh) {
 	profileNode->translate(1.7, 0, 0);
 
 	// Adding the rest of the head
-	Entity* headEntity = mScene->createEntity("head", "Default_OBJ.mesh");
+	Entity* headEntity = mScene->createEntity("head", "head.mesh");
 	SceneNode* headNode = mScene->getRootSceneNode()->createChildSceneNode();
 	headEntity->setMaterialName(materials[curMat.second][0]);
 

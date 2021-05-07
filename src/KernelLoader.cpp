@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-std::vector<float> KernelLoader::load(int nSamples) {
+void KernelLoader::load(int nSamples) {
 	std::ifstream infile("res/marble_kernel.txt");
 
 	std::vector<std::vector<float>> kernel;
@@ -15,8 +15,6 @@ std::vector<float> KernelLoader::load(int nSamples) {
 	}
 
 	kernel = downsample(kernel, nSamples);
-
-	std::vector<float> flattened;
 
 	std::cout << "static const float4 kernel[] = {" << std::endl;
 	for (auto sample : kernel) {
@@ -32,8 +30,6 @@ std::vector<float> KernelLoader::load(int nSamples) {
 	}
 
 	std::cout << "};" << std::endl;
-
-	return flattened;
 }
 
 std::vector<std::vector<float>> KernelLoader::downsample(std::vector<std::vector<float>> kernel, int nSamples) {

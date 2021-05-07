@@ -4,7 +4,7 @@
 
 class KernelLoader {
 public:
-	std::vector<float> load(int nSamples);
+	void load(int nSamples);
 
 private:
 	std::vector<std::vector<float>> downsample(std::vector<std::vector<float>> kernel, int nSamples);
