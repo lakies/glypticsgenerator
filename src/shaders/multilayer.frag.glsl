@@ -80,10 +80,6 @@ const vec4 colors[] = vec4[colorCount](
   vec4(0.6706,0.6902,0.6706, 0.07)
 );
 
-// vec3 getColor(int i) {
-
-// }
-
 vec3 colorMap(float val) {
   if (val < colors[0].a) {
     return colors[0].xyz;
@@ -140,14 +136,10 @@ void main(void) {
       }
     }
 
-    vec3 highlightColor = vec3(0.2863,0.1137,0.0078);//, vec3(0.1529,0.0392,0.0392))
-    interpolatedColor = mix(interpolatedColor, highlightColor, metaballStrength * (snoise(uv) / 2 + 0.5) * 1.2);
+    vec3 highlightColor = vec3(0.2863,0.1137,0.0078);
+    interpolatedColor = mix(interpolatedColor, highlightColor, metaballStrength * (snoise(uv * 2) / 2 + 0.5) * 1.5);
 
     vec3 n = normalize(interpolatedNormal);
-
-    // vec3 ambientColor = vec3(1.0,1.0,1.0);
-    // vec3 ambientReflection = vec3(0.3,0.3,0.3);
-    // vec3 ambient = ambientReflection * ambientColor;
 
     vec3 lightColor = vec3(1.0,1.0,1.0);
     vec3 diffuse = lightColor * interpolatedColor * max(dot(n, normalize(lightPosition - interpolatedPosition)), 0);
@@ -158,8 +150,6 @@ void main(void) {
 
     vec3 color = diffuse + specular;
 
-    //vec3 pos = (interpolatedModelPosition - vec3(0, -200, -250)) / 300; // 300
-
-    fragColor = vec4(color, 1.0);// * 0.00001 + vec4( interpolatedNormal, 1.0);
+    fragColor = vec4(color, 1.0);
 
 }

@@ -9,14 +9,6 @@ in vec3 interpolatedModelPosition;
 
 out vec4 fragColor;
 
-float numberOfTilesWidth = 1;
-float numberOfTilesHeight = 1;
-float amplitude = 20.0;
-vec3 jointColor = vec3(0.72, 0.72, 0.72);
-
-vec3 tileSize = vec3(1.1, 1.0, 1.1);
-vec3 tilePct = vec3(0.98, 1.0, 0.98);
-
 vec3 mod289(vec3 x) {
   return x - floor(x * (1.0 / 289.0)) * 289.0;
 }
@@ -122,21 +114,10 @@ void main(void) {
 
     vec3 n = normalize(interpolatedNormal);
 
-    // vec3 ambientColor = vec3(1.0,1.0,1.0);
-    // vec3 ambientReflection = vec3(0.3,0.3,0.3);
-    // vec3 ambient = ambientReflection * ambientColor;
-
     vec3 lightColor = vec3(1.0,1.0,1.0);
     vec3 diffuse = lightColor * interpolatedColor * max(dot(n, normalize(lightPosition - interpolatedPosition)), 0);
 
-    vec3 reflection = normalize(reflect(normalize(interpolatedPosition - lightPosition), n));
-    vec3 reflectionColor = vec3(1.0,1.0,1.0);
-    vec3 specular = lightColor * reflectionColor * pow(max(dot(normalize(vec3(0,0,0) - interpolatedPosition), reflection), 0), 500);
+    vec3 color = diffuse;
 
-    vec3 color = diffuse + specular;
-
-    //vec3 pos = (interpolatedModelPosition - vec3(0, -200, -250)) / 300; // 300
-
-    fragColor = vec4(color, 1.0);// * 0.00001 + vec4( interpolatedNormal, 1.0);
-
+    fragColor = vec4(color, 1.0);
 }

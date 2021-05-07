@@ -21,32 +21,6 @@ float3 depth_fp( float depth : TEXCOORD0, uniform float strength ) : COLOR
 	return float3(depth, -1 + strength, 0);
 }
 
-// void strength_vp(float4 position	: POSITION,
-//             out float4 oPosition    : POSITION,
-// 			uniform float4x4 proj,
-// 			uniform float4x4 worldView)
-// {
-//     float4 pos = mul(worldView, position);
-// 	oPosition = mul(proj, pos);
-// }
-
-// float strength_fp(uniform float strength) : COLOR
-// {
-// 	return -1 + strength;
-// }
-
-
-float4 depth_fp_test( float2 uv : TEXCOORD0,
-					    uniform sampler Scene : register(s0),
-					    uniform sampler Depth : register(s1)
-                        ) : COLOR
-{
-	float depth = tex2D( Depth, uv ).r;
-    float4 color = tex2D( Scene, uv );
-
-    return float4(depth, depth, depth, 1) + color * 0.000001;// + float4(1, 0, 0, 1);
-}
-
 static const int SSS_SAMPLE_SIZE = 21;
 
 static const float4 kernel[] = {
@@ -76,14 +50,16 @@ static const float4 kernel[] = {
 float4 sss_fp ( float2 uv : TEXCOORD0,
 					    uniform sampler Scene : register(s0),
 					    uniform sampler Depth : register(s1),
+					    uniform sampler Specular : register(s2),
 					    uniform float2 dir,
                         uniform float sssWidth,
-                        uniform float fieldOfView // in radians
+                        uniform float fieldOfView
                         ) : COLOR
 {
 
     float depthM = tex2D( Depth, uv ).r;
     float4 color = tex2D( Scene, uv );
+    float4 specular = tex2D( Specular, uv );
     float strength = tex2D( Depth, uv ).g;
 
     float distanceToProjectionWindow = 1.0 / tan(0.5 * fieldOfView);
@@ -102,36 +78,25 @@ float4 sss_fp ( float2 uv : TEXCOORD0,
     float4 colorBlurred = color;
     colorBlurred.rgb *= kernel[0].rgb;
 
-    // Accumulate the other samples:
     for (int i = 1; i < SSS_SAMPLE_SIZE; i++) {
-        // Fetch color and depth for current sample:
-        // float2 offset = uv + float2(1, 1) * dir * (i - SSS_SAMPLE_SIZE / 2) * 0.006;
         float2 offset = uv + kernel[i].a * finalStep;
         float4 offsetColor = tex2D( Scene , offset);
         if (offset.r > 1 || offset.g > 1 || offset.r < 0 || offset.g < 0) {
-            offsetColor = color;//float4(1, 0, 0, 1);
+            offsetColor = color;
         }
 
-        // #if SSSS_FOLLOW_SURFACE == 1
-		// 	// If the difference in depth is huge, we lerp color back to "colorM":
 		float depth = tex2D( Depth, offset ).r;
         
 		float s = clamp( abs(depthM - depth) / (distanceToProjectionWindow * (1 / sssWidth)), 0.0, 1.0);
-		s = min(1,s * 3); // custom / user definable scaling
+		s = min(1,s * 1.5); 
 
 		offsetColor.rgb = mix(offsetColor.rgb, color.rgb, s);
-        // #endif
-
-        // Accumulate:
-        // colorBlurred += offsetColor / SSS_SAMPLE_SIZE + finalStep.x * 0.0000000001 * kernel[i] * color;
-        // colorBlurred.rgb += (float3(1, 1, 1) / SSS_SAMPLE_SIZE) * offsetColor.rgb;
-
         colorBlurred.rgb += kernel[i].rgb * offsetColor.rgb;
     }
 
-    // if (dir.x == 0 && dir.y == 1) {
-    //     return float4(1, 0, 0, 1);
-    // }
+    if (dir.x == 1 && dir.y == 0) {
+        return colorBlurred + specular;
+    }
 
 	return colorBlurred;
 }

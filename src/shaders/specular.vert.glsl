@@ -13,15 +13,8 @@ out vec3 interpolatedNormal;
 out vec3 interpolatedPosition;
 out vec3 interpolatedModelPosition;
 out vec2 interpolatedUv;
-out float metaball1Dist;
-out float metaball2Dist;
-out float metaball3Dist;
 
 void main(void) {
-    metaball1Dist = distance(position.xyz, vec3(10.0, 90.0, -160.0));
-    metaball2Dist = distance(position.xyz, vec3(10.0, 99.0, -120.0));
-    metaball3Dist = distance(position.xyz, vec3(0, 60.0, -170.0));
-
     mat4 modelViewMatrix = viewMatrix * modelMatrix;
     mat3 normalMatrix = transpose(inverse(mat3(modelViewMatrix)));
 

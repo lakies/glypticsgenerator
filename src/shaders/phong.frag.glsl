@@ -72,20 +72,14 @@ float snoise(vec3 v){
 }
 
 void main(void) {
-    
-    // vec3 interpolatedColor = texture(diffuseMap, interpolatedModelPosition.yz / 500 + vec2(0.5, 0.5)).rgb;
     vec3 uv = interpolatedModelPosition / 500;
-    vec3 interpolatedColor = vec3(0.0745,0.0196,0.0196) * (snoise( 4 * uv) * 3);
+    vec3 interpolatedColor = vec3(0.0745,0.0196,0.0196) * ((snoise( 4 * uv) + 0.3) * 2);
 
     if (distance(uv, vec3(0, 0.1, -0.45)) < 0.1) {
         interpolatedColor = vec3(0.6706,0.6902,0.6706);
     }
 
     vec3 n = normalize(interpolatedNormal);
-
-    // vec3 ambientColor = vec3(1.0,1.0,1.0);
-    // vec3 ambientReflection = vec3(0.3,0.3,0.3);
-    // vec3 ambient = ambientReflection * ambientColor;
 
     vec3 lightColor = vec3(1.0,1.0,1.0);
     vec3 diffuse = lightColor * interpolatedColor * max(dot(n, normalize(lightPosition - interpolatedPosition)), 0);
@@ -96,8 +90,6 @@ void main(void) {
 
     vec3 color = diffuse + specular;
 
-    //vec3 pos = (interpolatedModelPosition - vec3(0, -200, -250)) / 300; // 300
-
-    fragColor = vec4(color, 1.0);// * 0.00001 + vec4( interpolatedNormal, 1.0);
+    fragColor = vec4(color, 1.0);
 
 }
