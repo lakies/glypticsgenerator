@@ -19,8 +19,7 @@ Both materials are created procedurally based on each pixel's coordinates in the
 Marble texture is created with a method created by [Lagae, A. et al.](https://hal.inria.fr/hal-00920177/document) in which vertical dark lines across the surface are distorted using layered [Simplex noise](https://en.wikipedia.org/wiki/Simplex_noise). \
 The lines are achieved by passing the sine of the x coordinate to a colormap function, which produced the following result on the left:
 
-![Lines](https://i.imgur.com/Q3HZ1u2.png "Lines")
-![Noise](https://i.imgur.com/rmDnUT8.png "Noise")
+![Lines and noise](https://i.imgur.com/ebkGEcM.png "Lines and noise")
 
 Then a turbulence factor is added to the x coordinate, which is created using Simplex noise. The noise can be seen above on the right.\
 Furthermore, the square of the y coordinate is multiplied with the sine function input which broke up the lines a little bit. 
